@@ -48,12 +48,15 @@ TagManager:
   - name: Background Tiles
     uniqueID: 2208422647
     locked: 0
+  - name: Details
+    uniqueID: 4066589967
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Ground
-    uniqueID: 1899384917
-    locked: 0
   - name: Player
     uniqueID: 501279429
+    locked: 0
+  - name: Ground
+    uniqueID: 1899384917
     locked: 0

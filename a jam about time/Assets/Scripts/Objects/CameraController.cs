@@ -29,6 +29,8 @@ public class CameraController : MonoBehaviour
     }
 
     void followTarget(){
+        if (target == null) target = GameObject.FindGameObjectWithTag("Player");
+
         // Set the intended position
         Vector3 targetPosition = target.transform.position + offset;
 

@@ -47,12 +47,14 @@ public class PlayerController : MonoBehaviour
     [Header("Interaction Settings")]
     public float pushSpeed;
     public bool canPush;
+    public float pullBoost;
     public float pushTime;
     public float pushWait;
     public bool pushRunning;
+    public float lastPushDirection;
 
     [Header("Animation Settings")]
-    public float runMargin;
+    public float lastPosition;
 
     // Set references
     private void Awake() {
@@ -71,6 +73,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
         // Set up jump recovery
         if (!oldGrounded && IsGrounded()){
             
@@ -80,15 +83,18 @@ public class PlayerController : MonoBehaviour
         oldGrounded = IsGrounded();
 
         Animations();
+        
         if (!movementLocked){
             PlayerMovement();
+        }   else {
+            // Do gravity reduce
+            velocity.y += rb.gravityScale * jumpMultiplier * Time.deltaTime;
         }
 
         if (IsGrounded()){
             wallJump = false;
         }
 
-        
     }
 
     // Animations
@@ -98,14 +104,15 @@ public class PlayerController : MonoBehaviour
 
         anim.SetFloat("Y Velocity", rb.velocity.y); // So animator knows y velocity
 
-        if (Mathf.Abs(rb.velocity.x) > runMargin && IsGrounded() && !movementLocked){ // Check running
+        if (Input.GetAxisRaw("Horizontal") != 0 && IsGrounded() && !movementLocked){ // Check running
             anim.SetBool("IsRun", true);
         }   else {
             anim.SetBool("IsRun", false);
         }
 
+        lastPosition = rb.position.x;
         // Flip the player in direction
-        if (!movementLocked && Mathf.Abs(rb.velocity.x) > runMargin) sr.flipX = rb.velocity.x < 0;
+        if (!movementLocked && Mathf.Abs(rb.velocity.x) > 0.5f) sr.flipX = rb.velocity.x < 0;
        
 
         if (rb.velocity.y < -1.5f){
@@ -126,15 +133,15 @@ public class PlayerController : MonoBehaviour
         RaycastHit2D lwall = Physics2D.Raycast(bc.bounds.center, Vector2.left,bc.bounds.size.x/2 + wallDetectDistance, groundLayer);
         RaycastHit2D rwall = Physics2D.Raycast(bc.bounds.center, Vector2.right,bc.bounds.size.x/2 + wallDetectDistance, groundLayer);
 
+        // Check if conditions are right for wall
         if ((lwall || rwall) && !IsGrounded() && (canHoldWall || onWall)) {
-            onWall = (lwall || rwall);
-            WallMovement(rwall);
-
-            anim.SetBool("OnWall", true);
+            onWall = (lwall || rwall); // Record if player is on wall
+            WallMovement(rwall); // Call wall movement function
+            anim.SetBool("OnWall", true); // Set animation
         }   else {
-            onWall = false;
-            Movement();
-            anim.SetBool("OnWall", false);
+            onWall = false; // Record that the player is not on wall
+            Movement(); // Run regular movement
+            anim.SetBool("OnWall", false); // Set aniamtion
         }
     }
 
@@ -184,67 +191,140 @@ public class PlayerController : MonoBehaviour
         // Better jumping
         BetterJumping();
         PushObjects();
+
         // Set velocity
         rb.velocity = velocity;
     }
 
+    // Landing recovery
     IEnumerator RecoveryTimer(){
+        // Lock the players movement
         movementLocked = true;
+
+        // Check how far the player has fallen
         float distance = lastFall - transform.position.y;
+
+        // Pause if the distence is above the jump recovery margin
         if (distance > jumpRecoveryMargin){
+            // Animation trigger
             anim.SetTrigger("Land");
+
+            // Wait for time
             yield return new WaitForSeconds(jumpRecovery);
         }
+
+        // Unlock movement
         movementLocked = false;
     }
 
+    // Detect and push nearby objects
     void PushObjects(){
         // Raycast for walls on either side of player
-        RaycastHit2D[] objects = Physics2D.RaycastAll(bc.bounds.center, Vector2.left,bc.bounds.size.x/2 + wallDetectDistance);
+        RaycastHit2D[] lwall = Physics2D.RaycastAll(bc.bounds.center, Vector2.left,bc.bounds.size.x/2 + wallDetectDistance); // Set left raycast
+        RaycastHit2D[] rwall = Physics2D.RaycastAll(bc.bounds.center, Vector2.right,bc.bounds.size.x/2 + wallDetectDistance); // Set right raycast
 
-        if (Input.GetAxisRaw("Horizontal") == 1){ // Check wall right
-            objects = Physics2D.RaycastAll(bc.bounds.center, Vector2.right,bc.bounds.size.x/2 + wallDetectDistance); // Set raycast
+        if (Input.GetKey(KeyCode.E)){
+            bool foundSide = false;
+            // Check left wall
+            for(int i = 0; i < lwall.Length; i++){
+                if (lwall[i].collider.tag == "Pushable"){
+                    // Flip x
+                    sr.flipX = true;
 
-            for(int i = 0; i < objects.Length; i++){
-                if (objects[i].collider.tag == "Pushable"){
-                    
-                    if (canPush){
-                        velocity.x = pushSpeed;
+                    foundSide = true;
+                    float input = Input.GetAxisRaw("Horizontal");
+                    anim.SetBool("Pushing", true);
+                    anim.SetBool("Pulling", true);
+                    if (canPush && input != 0){
+                        velocity.x = pushSpeed * input; // Set velocity
+                        anim.SetBool("IsRun", true); // Set animations
+
+                        // Reset timer if not the same as input
+                        if (lastPushDirection != input){
+                            pushRunning = false;
+                            canPush = true;
+                            StopAllCoroutines();
+                        }
+                        lastPushDirection = input; // Record pushing direction
+                        
+
+                        // Set pushing or pulling animation
+                        if (input == -1){
+                            anim.SetBool("Pushing", true);
+                            anim.SetBool("Pulling", false);
+
+                            lwall[i].collider.GetComponent<Rigidbody2D>().velocity = new Vector2(velocity.x-pullBoost, lwall[i].collider.GetComponent<Rigidbody2D>().velocity.y);
+                        }   else {
+                            anim.SetBool("Pushing", false);
+                            anim.SetBool("Pulling", true);
+
+                            lwall[i].collider.GetComponent<Rigidbody2D>().velocity = new Vector2(velocity.x+pullBoost, lwall[i].collider.GetComponent<Rigidbody2D>().velocity.y);
+
+                        }
+
+                        if (!pushRunning){
+                            StartCoroutine(Pushing());
+                        }
                         
                     }else {
                         velocity.x = 0;
                     }
-                    anim.SetBool("IsRun", true);
-                    anim.SetBool("Pushing", true);
-                    if (!pushRunning){
-                        StartCoroutine(Pushing());
-                    }
+                    
                     break;
-                }   else {
+                }  else {
+                    
                     anim.SetBool("Pushing", false);
+                    anim.SetBool("Pulling", false);
                 }
             }
-            
-        }   else if (Input.GetAxisRaw("Horizontal") == -1){ // Check wall right
-            objects = Physics2D.RaycastAll(bc.bounds.center, Vector2.left,bc.bounds.size.x/2 + wallDetectDistance); // Set raycast
 
-            for(int i = 0; i < objects.Length; i++){
-                if (objects[i].collider.tag == "Pushable"){
-                    if (canPush){
-                        velocity.x = -pushSpeed;
-                    }   else {
+            // Check right wall
+            
+            for(int i = 0; i < rwall.Length; i++){
+                if (foundSide) break;
+                
+                if (rwall[i].collider.tag == "Pushable"){
+                    // Flip x
+                    sr.flipX = false;
+                    
+                    float input = Input.GetAxisRaw("Horizontal");
+                    anim.SetBool("Pushing", true);
+                    anim.SetBool("Pulling", true);
+                    if (canPush && input != 0){
+                        velocity.x = pushSpeed * input;
+                        anim.SetBool("IsRun", true);
+                        lastPushDirection = input;
+
+                        // Set pushing or pulling animation and move object
+                        if (input == 1){
+                            anim.SetBool("Pushing", true);
+                            anim.SetBool("Pulling", false);
+
+                            rwall[i].collider.GetComponent<Rigidbody2D>().velocity = new Vector2(velocity.x+pullBoost, rwall[i].collider.GetComponent<Rigidbody2D>().velocity.y);
+                        }   else {
+                            anim.SetBool("Pushing", false);
+                            anim.SetBool("Pulling", true);
+                            
+                            rwall[i].collider.GetComponent<Rigidbody2D>().velocity = new Vector2(velocity.x-pullBoost, rwall[i].collider.GetComponent<Rigidbody2D>().velocity.y);
+                        }
+
+                        if (!pushRunning){
+                            StartCoroutine(Pushing());
+                        }
+                        
+                    }else {
                         velocity.x = 0;
                     }
-                    anim.SetBool("IsRun", true);
-                    anim.SetBool("Pushing", true);
-                    if (!pushRunning){
-                        StartCoroutine(Pushing());
-                    }
+                    
                     break;
-                }   else {
+                }  else {
                     anim.SetBool("Pushing", false);
+                    anim.SetBool("Pulling", false);
                 }
             }
+        }   else {
+            anim.SetBool("Pushing", false);
+            anim.SetBool("Pulling", false);
         }
     }
 
@@ -256,6 +336,7 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(pushTime);
         pushRunning = false;
     }
+
     void BetterJumping(){
         // Increase fall speed
         if (rb.velocity.y < 0){

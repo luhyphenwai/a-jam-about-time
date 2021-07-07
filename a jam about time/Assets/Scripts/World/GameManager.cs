@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public GameObject player;
+    public Animator anim;
     public float sceneTransitionTime;
     public bool switchingScenes;
     // Start is called before the first frame update
@@ -17,12 +18,12 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
     }
 
     public IEnumerator SwitchScenes(string scene){
 
         switchingScenes = true;
+        anim.SetTrigger("Slide");
         yield return new WaitForSeconds(sceneTransitionTime);
         AsyncOperation load = SceneManager.LoadSceneAsync(SceneUtility.GetBuildIndexByScenePath(scene), LoadSceneMode.Single);
         while (!load.isDone){

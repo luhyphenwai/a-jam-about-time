@@ -72,8 +72,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 501279429
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_Sprite: {fileID: 6850932908849683713, guid: 5826a0eadffc1c846b41761f17496a91, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -99,10 +99,10 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.09659484, y: 0.008929729}
+  m_Offset: {x: 0.0018726587, y: -0.057145953}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5208333, y: 0.5}
     oldSize: {x: 3, y: 3}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
@@ -110,7 +110,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.43854254, y: 0.98214054}
+  m_Size: {x: 0.2551123, y: 0.8499892}
   m_EdgeRadius: 0
 --- !u!50 &2089569289109353127
 Rigidbody2D:
@@ -124,7 +124,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 1000
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 5
@@ -168,9 +168,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   movementLocked: 0
-  wallSlideSpeed: 0
+  wallSlideSpeed: 2
   wallJumpVelocity: {x: 10, y: 12}
-  wallDetectDistance: 0.2
+  wallDetectDistance: 0.1
   onWall: 0
   wallJump: 0
   wallTime: 0.25
@@ -186,11 +186,13 @@ MonoBehaviour:
   sSpeed: 7
   jumpHeight: 15
   fallMultiplier: 5
-  jumpMultiplier: 4
+  jumpMultiplier: 5
   velocity: {x: 0, y: 0}
   pushSpeed: 2
-  canPush: 0
+  canPush: 1
+  pullBoost: 1.5
   pushTime: 0.32
   pushWait: 0.5
   pushRunning: 0
-  runMargin: 1
+  lastPushDirection: 0
+  lastPosition: 0
