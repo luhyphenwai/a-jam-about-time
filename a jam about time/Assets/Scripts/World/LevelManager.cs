@@ -20,7 +20,6 @@ public class LevelManager : MonoBehaviour
     public float sceneTransitionTime;
     public Scene lastScene;
     public string currentScene;
-    public float yDeathHeight;
     
     [Header("Player Settings")]
     public Vector2 playerPosition;
@@ -57,6 +56,7 @@ public class LevelManager : MonoBehaviour
         currentLevelObject = GameObject.FindGameObjectWithTag("LevelObject").GetComponent<LevelObjects>();
 
         if ((lastScene.name != futureScene && lastScene.name != pastScene) && (currentScene == futureScene || currentScene == pastScene)){
+            gm.currentLevel = this;
             if (lastScene.buildIndex > SceneUtility.GetBuildIndexByScenePath(futureScene)){
                 player.transform.position = playerEndPosition;
             }   else {
@@ -115,6 +115,9 @@ public class LevelManager : MonoBehaviour
             }
         }
 
+        // Wait a frame and reapply velocity
+        yield return new WaitForEndOfFrame();
+
         OnNewScene();
         player.GetComponent<PlayerController>().movementLocked = true; // lock player
         player.transform.position = playerPosition; // Set player position
@@ -128,6 +131,7 @@ public class LevelManager : MonoBehaviour
         // Update scene object info
         if (currentScene == futureScene && loadedScene){UpdateScene();}
         else if (currentScene == pastScene && loadedScene){UpdateScene();}
+
 
         // Wait to fade back in
         yield return new WaitForSeconds(sceneTransitionTime);
@@ -144,12 +148,19 @@ public class LevelManager : MonoBehaviour
         for (int i = 0; i < currentLevelObject.movableObjects.Length; i++){
             movableObjects[i] = currentLevelObject.movableObjects[i].transform.position;
         }
+        for (int i = 0; i < currentLevelObject.doors.Length; i++){
+            doors[i] = currentLevelObject.doors[i].GetComponent<DoorController>().open;
+        }
     }
 
     // Call after schanging scenes
     void UpdateScene(){
         for (int i = 0; i < currentLevelObject.movableObjects.Length; i++){
             currentLevelObject.movableObjects[i].transform.position = movableObjects[i];
+        }
+
+        for (int i = 0; i < currentLevelObject.doors.Length; i++){
+            currentLevelObject.doors[i].GetComponent<DoorController>().open = doors[i];
         }
     }
 }

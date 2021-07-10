@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 {
     public GameObject player;
     public Animator anim;
+    public LevelManager currentLevel;
     public float sceneTransitionTime;
     public bool switchingScenes;
     // Start is called before the first frame update
@@ -18,6 +19,13 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    }
+
+    public void Reset(){
+        // Reset variables
+        currentLevel.loadedScene = false;
+
+        StartCoroutine(SwitchScenes(SceneManager.GetActiveScene().name));
     }
 
     public IEnumerator SwitchScenes(string scene){

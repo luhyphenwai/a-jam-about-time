@@ -4,24 +4,42 @@ using UnityEngine;
 
 public class DoorController : MonoBehaviour
 {
-    public Animator doorSwitch;
-
+    public Animator anim;
     public bool playerInRange;
     public bool open;
-    public float doorOpenTime;
+    public bool inFuture;
+    public bool lastOpen;
+    public int direction;
+
+    public GameObject[] doors;
     
     
+    private void Start() {
+        anim = gameObject.GetComponent<Animator>();
+    }
 
     // Update is called once per frame
     void Update()
     {
-        if (playerInRange && Input.GetKeyDown(KeyCode.E)){
+        anim.SetBool("PlayerInRange", playerInRange);
+        anim.SetInteger("Direction", direction);
+        anim.SetBool("InFuture", inFuture);
+        anim.SetBool("Open", open);
+        if ((playerInRange && Input.GetKeyDown(KeyCode.E)) || lastOpen != open){
             open = !open;
+            for(int i = 0; i<doors.Length; i++){
+                BoxCollider2D bc = doors[i].GetComponent<BoxCollider2D>();
+                if (bc.enabled){
+                    bc.enabled = true;
+                    doors[i].GetComponent<Animator>().SetBool("Open", true);
+                }   else {
+                    bc.enabled = false;
+                    doors[i].GetComponent<Animator>().SetBool("Open", false);
+                }
+            }
         }
 
-        if (open){
-            // Set door anim, which will change sprite and unlock box collider
-        }
+        lastOpen = open;
     }
 
     private void OnTriggerEnter2D(Collider2D other) {

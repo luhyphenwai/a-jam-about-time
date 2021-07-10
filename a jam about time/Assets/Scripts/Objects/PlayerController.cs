@@ -7,13 +7,20 @@ public class PlayerController : MonoBehaviour
 {
     [Header("References")]
     public LayerMask groundLayer;
+    public LayerMask enemyLayer;
     private Rigidbody2D rb;
     private BoxCollider2D bc;
     private SpriteRenderer sr;
     private Animator anim;
+    private GameManager gm;
 
     [Header("General Settings")]
     public bool movementLocked;
+
+    [Header("Death Settings")]
+    public bool dead;
+    public float deathTime;
+    public Vector2 deathVelocity;
 
 
     [Header("Wall Movement Settings")]
@@ -62,6 +69,9 @@ public class PlayerController : MonoBehaviour
         bc = gameObject.GetComponent<BoxCollider2D>();
         sr = gameObject.GetComponent<SpriteRenderer>();
         anim = gameObject.GetComponent<Animator>();
+        if (GameObject.FindGameObjectWithTag("GameManager") != null ){
+            gm = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
+        }
     }
 
     // Check ground
@@ -82,19 +92,41 @@ public class PlayerController : MonoBehaviour
         }   
         oldGrounded = IsGrounded();
 
-        Animations();
+        if (!dead){
+            Animations();
+        }
         
-        if (!movementLocked){
+        if (!movementLocked && !dead){
             PlayerMovement();
-        }   else {
+        }   else if (!dead){
             // Do gravity reduce
-            velocity.y += rb.gravityScale * jumpMultiplier * Time.deltaTime;
+            if (!IsGrounded() && rb.velocity.y > 0){
+                velocity = rb.velocity;
+                velocity.y += rb.gravityScale * jumpMultiplier * Time.deltaTime;
+                rb.velocity = velocity;
+            }
         }
 
         if (IsGrounded()){
             wallJump = false;
         }
 
+        // Check for enemies 
+        RaycastHit2D enemyCast = Physics2D.BoxCast(bc.bounds.center, bc.bounds.size, 0, Vector2.down, 0f, enemyLayer);
+        if (enemyCast && !dead){
+            StartCoroutine(Dead(enemyCast));
+            dead = true;
+        }
+    }
+    IEnumerator Dead(RaycastHit2D enemy){
+        rb.velocity = new Vector2(deathVelocity.x * Mathf.Sign(transform.position.x - enemy.collider.transform.position.x), deathVelocity.y);
+        if ( Mathf.Sign(transform.position.x - enemy.collider.transform.position.x) >= 0){
+            anim.SetTrigger("DeadRight");
+        }   else {
+            anim.SetTrigger("DeadLeft");
+        }
+        yield return new WaitForSeconds(deathTime);
+        gm.Reset();
     }
 
     // Animations
@@ -115,7 +147,7 @@ public class PlayerController : MonoBehaviour
         if (!movementLocked && Mathf.Abs(rb.velocity.x) > 0.5f) sr.flipX = rb.velocity.x < 0;
        
 
-        if (rb.velocity.y < -1.5f){
+        if (rb.velocity.y < -1f){
             if (!wasFalling){
                 anim.SetTrigger("Falling");
                 lastFall = transform.position.y;

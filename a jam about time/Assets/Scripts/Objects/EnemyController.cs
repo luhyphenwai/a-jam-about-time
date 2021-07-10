@@ -6,9 +6,11 @@ public class EnemyController : MonoBehaviour
 {
     [Header("References")]
     public GameObject player;
+    public LayerMask groundLayer;
     private Rigidbody2D rb;
 
     [Header("Movement Settings")]
+    public bool floating;
     public float chaseSpeed;
     public float chasingDistance;
 
@@ -42,14 +44,20 @@ public class EnemyController : MonoBehaviour
             // Move player towards the position until they get close to the next patrol point
             while (Vector2.Distance(transform.position, patrolPoints[i]) > margin){
                 rb.velocity = new Vector2(patrolSpeed*Mathf.Sign(patrolPoints[i].x-transform.position.x), rb.velocity.y);
+                if (floating) DetectWall();
                 yield return null;
             }
             rb.velocity = new Vector2(0, rb.velocity.y);
             yield return new WaitForSeconds(patrolWaitTime);
         }
-        patrolling =false;
+        patrolling = false;
     }
+    
+    void DetectWall(){
+        // Raycast the sides of the bot
 
+        // Move up if player y is above and raycasts hit
+    }
     void ChasePlayer(){
         float dir = Mathf.Sign(player.transform.position.x-transform.position.x);
         rb.velocity = new Vector2(chaseSpeed*dir, 0);
