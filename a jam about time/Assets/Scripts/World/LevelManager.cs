@@ -12,6 +12,7 @@ public class LevelManager : MonoBehaviour
     public string pastScene;
     public string futureScene;
     private GameManager gm;
+    public AudioSource timeSound;
 
     [Header("Scene Settings")]
     public bool loadedScene; // Used to check if the past version of the level has ever been loaded
@@ -87,6 +88,7 @@ public class LevelManager : MonoBehaviour
         // player.GetComponent<Animator>().SetTrigger("Dissapate");
         flashAnim.SetTrigger("Flash");
 
+        timeSound.Play();
         yield return new WaitForSeconds(sceneSwitchSpeed); // Wait animation scene switch time
 
         playerPosition = player.transform.position; // Record player current position

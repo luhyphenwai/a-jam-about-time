@@ -63,6 +63,13 @@ public class PlayerController : MonoBehaviour
     [Header("Animation Settings")]
     public float lastPosition;
 
+    [Header("Audio Settings")]
+    public AudioSource run;
+    public float runTime;
+    public bool runBool;
+    public AudioSource jump;
+    public AudioSource land;
+
     // Set references
     private void Awake() {
         rb = gameObject.GetComponent<Rigidbody2D>();
@@ -88,6 +95,7 @@ public class PlayerController : MonoBehaviour
         if (!oldGrounded && IsGrounded()){
             
             StartCoroutine(RecoveryTimer());
+            land.Play();
             rb.velocity = Vector2.zero;
         }   
         oldGrounded = IsGrounded();
@@ -117,6 +125,20 @@ public class PlayerController : MonoBehaviour
             StartCoroutine(Dead(enemyCast));
             dead = true;
         }
+
+        if (Input.GetAxisRaw("Horizontal") != 0 && IsGrounded() && !runBool){
+            StartCoroutine(RunSound());
+        }
+    }
+    IEnumerator RunSound(){
+        runBool = true;
+        if (Input.GetAxisRaw("Horizontal") != 0 && IsGrounded()){
+            run.Play();
+            yield return new WaitForSeconds(runTime);
+            runBool = false;
+        }
+
+        runBool = false;
     }
     IEnumerator Dead(RaycastHit2D enemy){
         rb.velocity = new Vector2(deathVelocity.x * Mathf.Sign(transform.position.x - enemy.collider.transform.position.x), deathVelocity.y);
@@ -211,9 +233,11 @@ public class PlayerController : MonoBehaviour
 
             // Set Animation
             anim.SetTrigger("Jump");
+            jump.Play();
 
             // Set wall timer
             StopAllCoroutines();
+            runBool = false;
             canPush = true;
             pushRunning = false;
             StartCoroutine(WallJumpTime());
@@ -276,6 +300,7 @@ public class PlayerController : MonoBehaviour
                             pushRunning = false;
                             canPush = true;
                             StopAllCoroutines();
+                            runBool = false;
                         }
                         lastPushDirection = input; // Record pushing direction
                         
@@ -412,6 +437,7 @@ public class PlayerController : MonoBehaviour
             wallJump = true;
             // Set Animation
             anim.SetTrigger("Jump");
+            jump.Play();
 
             // Move player off wall
             transform.position = new Vector2(transform.position.x+(-(wallDetectDistance+0.1f)*dir), transform.position.y);

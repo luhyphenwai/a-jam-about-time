@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour
     public IEnumerator SwitchScenes(string scene){
 
         switchingScenes = true;
-        anim.SetTrigger("Slide");
+        anim.SetTrigger("Flash");
         yield return new WaitForSeconds(sceneTransitionTime);
         AsyncOperation load = SceneManager.LoadSceneAsync(SceneUtility.GetBuildIndexByScenePath(scene), LoadSceneMode.Single);
         while (!load.isDone){
