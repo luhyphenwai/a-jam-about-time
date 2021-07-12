@@ -12,6 +12,7 @@ public class DoorController : MonoBehaviour
     public int direction;
 
     public GameObject[] doors;
+    public AudioSource doorSound;
     
     
     private void Start() {
@@ -21,21 +22,22 @@ public class DoorController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        anim.SetBool("PlayerInRange", playerInRange);
+        if (!inFuture) anim.SetBool("PlayerInRange", playerInRange);
         anim.SetInteger("Direction", direction);
         anim.SetBool("InFuture", inFuture);
         anim.SetBool("Open", open);
-        if ((playerInRange && Input.GetKeyDown(KeyCode.E)) || lastOpen != open){
-            open = !open;
+        if ((!inFuture && (playerInRange && Input.GetKeyDown(KeyCode.E)) )|| lastOpen != open){
+            if (lastOpen==open) open = !open;
             for(int i = 0; i<doors.Length; i++){
                 BoxCollider2D bc = doors[i].GetComponent<BoxCollider2D>();
                 if (bc.enabled){
-                    bc.enabled = true;
+                    bc.enabled = false;
                     doors[i].GetComponent<Animator>().SetBool("Open", true);
                 }   else {
-                    bc.enabled = false;
+                    bc.enabled = true;
                     doors[i].GetComponent<Animator>().SetBool("Open", false);
                 }
+                doorSound.Play();
             }
         }
 

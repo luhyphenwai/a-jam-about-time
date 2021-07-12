@@ -19,7 +19,7 @@ public class LevelManager : MonoBehaviour
     public bool loadingScene; // Used to check if a scene is currently being loaded
     public float sceneSwitchSpeed;
     public float sceneTransitionTime;
-    public Scene lastScene;
+    public string lastScene;
     public string currentScene;
     
     [Header("Player Settings")]
@@ -34,17 +34,18 @@ public class LevelManager : MonoBehaviour
 
     private void Start() {
         gm = transform.GetComponentInParent<GameManager>();
-        lastScene = SceneManager.GetActiveScene();
+        lastScene = SceneManager.GetActiveScene().name;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (player == null) player = GameObject.FindGameObjectWithTag("Player");
         currentScene = SceneManager.GetActiveScene().name;
-        if (lastScene != SceneManager.GetActiveScene()){
+        if (lastScene != SceneManager.GetActiveScene().name){
             OnNewScene();
         }
-        lastScene = SceneManager.GetActiveScene();
+        lastScene = SceneManager.GetActiveScene().name;
 
         if (Input.GetKeyDown(KeyCode.F) && (currentScene == pastScene || currentScene == futureScene) && !loadingScene){
             StartCoroutine(SwitchLevel());
@@ -56,13 +57,14 @@ public class LevelManager : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player");
         currentLevelObject = GameObject.FindGameObjectWithTag("LevelObject").GetComponent<LevelObjects>();
 
-        if ((lastScene.name != futureScene && lastScene.name != pastScene) && (currentScene == futureScene || currentScene == pastScene)){
+        if ((lastScene != futureScene && lastScene != pastScene) && (currentScene == futureScene || currentScene == pastScene)){
             gm.currentLevel = this;
-            if (lastScene.buildIndex > SceneUtility.GetBuildIndexByScenePath(futureScene)){
+            if (SceneUtility.GetBuildIndexByScenePath(lastScene) > SceneUtility.GetBuildIndexByScenePath(pastScene)){
                 player.transform.position = playerEndPosition;
             }   else {
                 player.transform.position = playerStartPosition;
             }
+            Debug.Log(lastScene);
         }
         // Update info if first time entering past scene
         if (currentScene == pastScene && !loadedScene){
@@ -81,6 +83,7 @@ public class LevelManager : MonoBehaviour
 
         gm.switchingScenes = true;
 
+        player = GameObject.FindGameObjectWithTag("Player");
         player.GetComponent<PlayerController>().movementLocked = true; // lock player
 
         if (currentScene == pastScene){UpdateInfo();} // Update past scene info if switching from past scene
@@ -119,6 +122,7 @@ public class LevelManager : MonoBehaviour
 
         // Wait a frame and reapply velocity
         yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
 
         OnNewScene();
         player.GetComponent<PlayerController>().movementLocked = true; // lock player
@@ -126,9 +130,11 @@ public class LevelManager : MonoBehaviour
         player.GetComponent<Rigidbody2D>().velocity = playerVelocity; // Set player velocity
         // player.GetComponent<Animator>().SetTrigger("Appear"); // Set animation
 
+        yield return new WaitForEndOfFrame();
+
         // Set camera position
-        CameraController camera = GameObject.Find("Main Camera").GetComponent<CameraController>();
-        camera.transform.position = player.transform.position + camera.offset;
+        CameraController camera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<CameraController>();
+        camera.transform.position = player.transform.position;
 
         // Update scene object info
         if (currentScene == futureScene && loadedScene){UpdateScene();}
@@ -146,7 +152,9 @@ public class LevelManager : MonoBehaviour
 
     // Call before changing scenes
     void UpdateInfo(){
+        if (currentLevelObject == null) currentLevelObject = GameObject.FindGameObjectWithTag("LevelObject").GetComponent<LevelObjects>();
         movableObjects = new Vector2[currentLevelObject.movableObjects.Length];
+        doors = new bool[currentLevelObject.doors.Length];
         for (int i = 0; i < currentLevelObject.movableObjects.Length; i++){
             movableObjects[i] = currentLevelObject.movableObjects[i].transform.position;
         }

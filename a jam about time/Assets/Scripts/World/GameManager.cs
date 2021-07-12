@@ -10,6 +10,10 @@ public class GameManager : MonoBehaviour
     public LevelManager currentLevel;
     public float sceneTransitionTime;
     public bool switchingScenes;
+    public AudioSource menu;
+    public AudioSource forest;
+    public AudioSource industry;
+    public AudioSource travel;
     // Start is called before the first frame update
     void Start()
     {
@@ -19,6 +23,7 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        OnNewScene();
     }
 
     public void Reset(){
@@ -29,23 +34,47 @@ public class GameManager : MonoBehaviour
     }
 
     public IEnumerator SwitchScenes(string scene){
-
+        AsyncOperation load = SceneManager.LoadSceneAsync(SceneUtility.GetBuildIndexByScenePath(scene), LoadSceneMode.Single);
+        load.allowSceneActivation= false;
         switchingScenes = true;
         anim.SetTrigger("Flash");
         yield return new WaitForSeconds(sceneTransitionTime);
-        AsyncOperation load = SceneManager.LoadSceneAsync(SceneUtility.GetBuildIndexByScenePath(scene), LoadSceneMode.Single);
-        while (!load.isDone){
-            yield return null;
+        load.allowSceneActivation = true;
+
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
+        player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null) {
+            player.GetComponent<PlayerController>().movementLocked = true;
+            GameObject.FindGameObjectWithTag("MainCamera").transform.position = player.transform.position;
         }
-
-        
-        if (player != null) player.GetComponent<PlayerController>().movementLocked = true;
-
         yield return new WaitForSeconds(sceneTransitionTime);
         
-        if (player != null) player.GetComponent<PlayerController>().movementLocked = false;
-        
+        if (player != null) {
+            player.GetComponent<PlayerController>().movementLocked = false;
+        }
+        if (SceneManager.GetActiveScene().buildIndex == 0){
+            menu.Play();
+            forest.Stop();
+            industry.Stop();
+        } else if (SceneManager.GetActiveScene().buildIndex <= 8){
+            menu.Stop();
+            forest.Play();
+            industry.Stop();
+        }else if (SceneManager.GetActiveScene().buildIndex == 19){
+            menu.Stop();
+            forest.Stop();
+            industry.Stop();
+        }
+        else {
+            menu.Stop();
+            forest.Stop();
+            industry.Play();
+        }
         switchingScenes = false;
+        travel.Play();
+        
+
     }
 
     private Scene lastScene;
@@ -56,6 +85,7 @@ public class GameManager : MonoBehaviour
                 player = GameObject.FindGameObjectWithTag("Player");
             }
         }   
+        
         lastScene = SceneManager.GetActiveScene();
     }
 }

@@ -9,17 +9,14 @@ public class FadeEffect : MonoBehaviour
 
     public float fadeTime;
     public bool revealed;
-    public bool playerInRange;
 
     private void OnTriggerEnter2D(Collider2D other) {
-        playerInRange = true;
         if (other.tag == "Player" && !revealed){
             StartCoroutine(FadeIn());
         }
     }
 
     private void OnTriggerExit2D(Collider2D other) {
-        playerInRange = false;
         if (other.tag == "Player" && revealed){
             StartCoroutine(FadeOut());
         }
@@ -38,7 +35,6 @@ public class FadeEffect : MonoBehaviour
                 Color color = item.GetComponent<SpriteRenderer>().color;
                 color.a += addValue;
                 item.GetComponent<SpriteRenderer>().color = color;
-                print(color);
                 yield return new WaitForEndOfFrame();
             }
         }
@@ -58,7 +54,6 @@ public class FadeEffect : MonoBehaviour
                 Color color = item.GetComponent<SpriteRenderer>().color;
                 color.a -= addValue;
                 item.GetComponent<SpriteRenderer>().color = color;
-                print(color);
                 yield return new WaitForEndOfFrame();
             }
         }

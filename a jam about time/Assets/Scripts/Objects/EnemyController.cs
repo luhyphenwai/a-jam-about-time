@@ -40,6 +40,7 @@ public class EnemyController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (player == null )player = GameObject.FindGameObjectWithTag("Player");
         if (Vector2.Distance(transform.position, player.transform.position) < chasingDistance && !dead){
             ChasePlayer();
             if (!chasing){

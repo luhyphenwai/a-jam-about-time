@@ -69,6 +69,7 @@ public class PlayerController : MonoBehaviour
     public bool runBool;
     public AudioSource jump;
     public AudioSource land;
+    public AudioSource death;
 
     // Set references
     private void Awake() {
@@ -122,13 +123,20 @@ public class PlayerController : MonoBehaviour
         // Check for enemies 
         RaycastHit2D enemyCast = Physics2D.BoxCast(bc.bounds.center, bc.bounds.size, 0, Vector2.down, 0f, enemyLayer);
         if (enemyCast && !dead){
-            StartCoroutine(Dead(enemyCast));
+            StartCoroutine(Dead(enemyCast.collider.gameObject));
             dead = true;
         }
 
-        if (Input.GetAxisRaw("Horizontal") != 0 && IsGrounded() && !runBool){
+        if (Input.GetAxisRaw("Horizontal") != 0 && IsGrounded() && !pushRunning && !runBool ){
             StartCoroutine(RunSound());
         }
+    }
+
+    private void OnCollisionEnter2D(Collision2D other) {
+        if (other.gameObject.tag == "Enemy"){
+            StartCoroutine(Dead(other.collider.gameObject));
+            dead = true;
+        } 
     }
     IEnumerator RunSound(){
         runBool = true;
@@ -140,13 +148,14 @@ public class PlayerController : MonoBehaviour
 
         runBool = false;
     }
-    IEnumerator Dead(RaycastHit2D enemy){
-        rb.velocity = new Vector2(deathVelocity.x * Mathf.Sign(transform.position.x - enemy.collider.transform.position.x), deathVelocity.y);
-        if ( Mathf.Sign(transform.position.x - enemy.collider.transform.position.x) >= 0){
+    IEnumerator Dead(GameObject enemy){
+        rb.velocity = new Vector2(deathVelocity.x * Mathf.Sign(transform.position.x - enemy.transform.position.x), deathVelocity.y);
+        if ( Mathf.Sign(transform.position.x - enemy.transform.position.x) >= 0){
             anim.SetTrigger("DeadRight");
         }   else {
             anim.SetTrigger("DeadLeft");
         }
+        death.Play();
         yield return new WaitForSeconds(deathTime);
         gm.Reset();
     }
@@ -389,6 +398,7 @@ public class PlayerController : MonoBehaviour
         pushRunning =true;
         canPush = false;
         yield return new WaitForSeconds(pushWait);
+        run.Play();
         canPush = true;
         yield return new WaitForSeconds(pushTime);
         pushRunning = false;
